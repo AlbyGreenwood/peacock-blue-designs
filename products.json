@@ -5,10 +5,22 @@
     "category": "artwork",
     "size": "31cm x 41cm",
     "medium": "Watercolor on Arches Cold Pressed 100% Cotton",
-    "price": 450,
+    "price": 550,
     "description": "A vibrant watercolor composition featuring a striking red-breasted bird perched gracefully among cascading blue orchids. With brilliant plumage, rich gradations of red, orange, and yellow that seem to glow against the delicate periwinkle blooms.",
     "year": 2025,
     "image": "https://i.imgur.com/g3qltNq.jpeg",
     "sold": false
   }
+   {
+    "id": 2,
+    "title": "Blue Wren",
+    "category": "artwork",
+    "size": "31cm x 41cm",
+    "medium": "Watercolor on Arches Cold Pressed 100% Cotton",
+    "price": 450,
+    "description": "A vibrant watercolor composition featuring a blue wren and leucadendron background.",
+    "year": 2025,
+    "image": "https://i.imgur.com/Z07Uyfq.jpeg",
+    "sold": false
+  },
 ]
