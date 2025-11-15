@@ -225,31 +225,7 @@
     </div>
 
     <script>
-        let items = [
-            {
-                id: 1,
-                title: "Nature's Whisper",
-                category: "artwork",
-                size: "60cm x 90cm",
-                medium: "Watercolour on Paper",
-                price: 850,
-                description: "A serene watercolour capturing natural forms.",
-                year: 2024,
-                image: "https://via.placeholder.com/400x600/20b2aa/ffffff?text=Artwork+1",
-                sold: false
-            },
-            {
-                id: 2,
-                title: "Peacock Pendant",
-                category: "jewellery",
-                material: "Sterling Silver",
-                price: 145,
-                description: "Hand-crafted peacock feather pendant.",
-                year: 2024,
-                image: "https://via.placeholder.com/400x400/1e90ff/ffffff?text=Pendant",
-                sold: false
-            }
-        ];
+       let items = [];
 
         let cart = [];
         let isAdmin = false;
@@ -263,31 +239,42 @@
             shippingTier2Limit: 1500
         };
 
-        window.addEventListener('load', function() {
-            loadData();
-            renderItems();
-            showPage('home');
-        });
+        window.addEventListener('load', async function() {
+    await loadProductsFromGitHub();
+    loadData();
+    renderItems();
+    showPage('home');
+});
 
         function saveData() {
-            try {
-                localStorage.setItem('peacockBlueItems', JSON.stringify(items));
-                localStorage.setItem('peacockBlueSettings', JSON.stringify(settings));
-            } catch(e) {
-                console.log('Storage not available');
-            }
-        }
+    try {
+        localStorage.setItem('peacockBlueSettings', JSON.stringify(settings));
+        // Note: Items are now stored in products.json on GitHub
+        alert('Note: To save product changes permanently, you need to update products.json in your GitHub repository.');
+    } catch(e) {
+        console.log('Storage not available');
+    }
+}
 
-        function loadData() {
-            try {
-                const savedItems = localStorage.getItem('peacockBlueItems');
-                const savedSettings = localStorage.getItem('peacockBlueSettings');
-                if (savedItems) items = JSON.parse(savedItems);
-                if (savedSettings) settings = JSON.parse(savedSettings);
-            } catch(e) {
-                console.log('Could not load saved data');
-            }
+       async function loadProductsFromGitHub() {
+    try {
+        const response = await fetch('products.json');
+        if (response.ok) {
+            items = await response.json();
         }
+    } catch(e) {
+        console.log('Could not load products from GitHub');
+    }
+}
+
+function loadData() {
+    try {
+        const savedSettings = localStorage.getItem('peacockBlueSettings');
+        if (savedSettings) settings = JSON.parse(savedSettings);
+    } catch(e) {
+        console.log('Could not load saved data');
+    }
+}
 
         function showPage(page) {
             document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
