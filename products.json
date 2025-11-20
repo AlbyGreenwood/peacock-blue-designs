@@ -24,19 +24,15 @@
     "sold": false
   },
   {
-  "id": "blue-orchid-sunbird",
-  "name": "Blue Orchid with Sunbird",
-  "category": "original-painting",
-  "price": 450,
-  "image": "images/blue-orchid-sunbird.jpg",
-  "description": "A vibrant celebration of tropical beauty, this original watercolor painting features a striking blue orchid in full bloom with a delicate sunbird perched among the petals. Rich jewel-toned purples and deep violets create dramatic depth across the orchid's petals, transitioning to softer lavenders where light touches the blooms. Blue-green leaves and stems flow gracefully through the composition, creating movement and balance. The contrast between the bold, saturated orchid and the gentle sunbird creates a captivating focal point, while the organic flow of the watercolor technique brings the tropical scene to life. Painted with premium watercolor paints on Arches watercolor paper, this piece captures the exotic elegance of nature's most colorful creatures.",
-  "details": {
-    "medium": "Watercolor on Arches paper",
-    "dimensions": "36cm x 51cm (14.2\" x 20.1\")",
-    "year": "2024",
-    "signed": true,
-    "framed": false
-  },
-  "inStock": true
-}
+    "id": 3,
+    "title": "Sunbird in Purple Orchids",
+    "category": "artwork",
+    "size": "36cm x 51cm",
+    "medium": "Watercolor on Arches Cold Pressed 100% Cotton",
+    "price": 650,
+    "description": "A vibrant celebration of tropical beauty featuring a delicate sunbird perched among striking purple orchids in full bloom. Rich jewel-toned purples and deep violets create dramatic depth across the orchid's petals, while blue-green leaves flow gracefully through the composition.",
+    "year": 2025,
+    "image": "https://i.imgur.com/xeQm1JJ.jpg",
+    "sold": false
+  }
 ]
