@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Peacock Blue Designs - Jewellery & Art by Alby Greenwood</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PayPal SDK -->
+    <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=AUD&enable-funding=card"></script>
     <style>
         .sold-overlay {
             position: absolute;
@@ -135,7 +137,12 @@
             <h2 class="text-4xl font-bold text-blue-900 mb-8">Admin Settings</h2>
             <div class="bg-white rounded-lg shadow-lg p-6 space-y-4">
                 <div>
-                    <label class="block text-gray-700 font-bold mb-2">PayPal Email</label>
+                    <label class="block text-gray-700 font-bold mb-2">PayPal Client ID</label>
+                    <input type="text" id="paypalClientId" class="w-full p-2 border border-blue-300 rounded" placeholder="Your PayPal Client ID">
+                    <p class="text-xs text-gray-500 mt-1">Get this from PayPal Developer Dashboard</p>
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-bold mb-2">PayPal Email (for notifications)</label>
                     <input type="email" id="paypalEmail" class="w-full p-2 border border-blue-300 rounded" value="peacockbluedesigns@outlook.com">
                 </div>
                 <div class="border-t pt-4">
@@ -176,9 +183,17 @@
                     <span>Total:</span>
                     <span id="cartTotal">$0</span>
                 </div>
-                <button onclick="checkout()" class="w-full mt-6 bg-gradient-to-r from-blue-900 to-teal-700 text-white px-6 py-3 rounded-lg font-bold">
-                    Checkout with PayPal
-                </button>
+                
+                <!-- PayPal Button Container -->
+                <div id="paypal-button-container" class="mt-6"></div>
+                
+                <!-- Alternative: PayPal.Me Link (fallback) -->
+                <div id="paypalMeFallback" class="hidden mt-4">
+                    <a href="https://paypal.me/peacockbluedesigns" target="_blank" class="block w-full text-center bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700">
+                        Pay with PayPal.Me
+                    </a>
+                    <p class="text-xs text-gray-500 text-center mt-2">Please include order total: <span id="paypalMeTotal"></span></p>
+                </div>
             </div>
         </div>
     </div>
@@ -226,12 +241,12 @@
 
     <script>
        let items = [];
-
         let cart = [];
         let isAdmin = false;
         let currentCategory = 'all';
         let editingItemId = null;
         let settings = {
+            paypalClientId: "",
             paypalEmail: "peacockbluedesigns@outlook.com",
             shippingTier1: 25,
             shippingTier2: 35,
@@ -240,46 +255,48 @@
         };
 
         window.addEventListener('load', async function() {
-    await loadProductsFromGitHub();
-    loadData();
-    renderItems();
-    showPage('home');
-});
+            await loadProductsFromGitHub();
+            loadData();
+            renderItems();
+            showPage('home');
+        });
 
         function saveData() {
-    try {
-        localStorage.setItem('peacockBlueSettings', JSON.stringify(settings));
-        // Note: Items are now stored in products.json on GitHub
-        alert('Note: To save product changes permanently, you need to update products.json in your GitHub repository.');
-    } catch(e) {
-        console.log('Storage not available');
-    }
-}
-
-       async function loadProductsFromGitHub() {
-    try {
-        const response = await fetch('products.json');
-        if (response.ok) {
-            items = await response.json();
+            try {
+                localStorage.setItem('peacockBlueSettings', JSON.stringify(settings));
+            } catch(e) {
+                console.log('Storage not available');
+            }
         }
-    } catch(e) {
-        console.log('Could not load products from GitHub');
-    }
-}
 
-function loadData() {
-    try {
-        const savedSettings = localStorage.getItem('peacockBlueSettings');
-        if (savedSettings) settings = JSON.parse(savedSettings);
-    } catch(e) {
-        console.log('Could not load saved data');
-    }
-}
+        async function loadProductsFromGitHub() {
+            try {
+                const response = await fetch('products.json');
+                if (response.ok) {
+                    items = await response.json();
+                }
+            } catch(e) {
+                console.log('Could not load products from GitHub');
+            }
+        }
+
+        function loadData() {
+            try {
+                const savedSettings = localStorage.getItem('peacockBlueSettings');
+                if (savedSettings) settings = JSON.parse(savedSettings);
+            } catch(e) {
+                console.log('Could not load saved data');
+            }
+        }
 
         function showPage(page) {
             document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
             document.getElementById(page + 'Page').classList.remove('hidden');
             if (page === 'shop') renderItems();
+            if (page === 'admin') {
+                document.getElementById('paypalClientId').value = settings.paypalClientId || '';
+                document.getElementById('paypalEmail').value = settings.paypalEmail;
+            }
         }
 
         function filterCategory(category) {
@@ -384,7 +401,11 @@ function loadData() {
                 document.getElementById('cartSubtotal').textContent = '$' + subtotal;
                 document.getElementById('cartShipping').textContent = shipping === 0 ? 'FREE' : '$' + shipping;
                 document.getElementById('cartTotal').textContent = '$' + total;
+                document.getElementById('paypalMeTotal').textContent = '$' + total;
                 cartSummary.classList.remove('hidden');
+                
+                // Render PayPal button
+                renderPayPalButton(subtotal, shipping, total);
             }
         }
 
@@ -394,13 +415,109 @@ function loadData() {
             return settings.shippingTier1;
         }
 
+        function renderPayPalButton(subtotal, shipping, total) {
+            const container = document.getElementById('paypal-button-container');
+            const fallback = document.getElementById('paypalMeFallback');
+            container.innerHTML = '';
+            
+            // Check if PayPal Client ID is configured
+            if (!settings.paypalClientId || settings.paypalClientId === '') {
+                // Show PayPal.Me fallback
+                container.classList.add('hidden');
+                fallback.classList.remove('hidden');
+                return;
+            }
+            
+            // Hide fallback and show PayPal button
+            fallback.classList.add('hidden');
+            container.classList.remove('hidden');
+            
+            // Render PayPal Smart Payment Button
+            paypal.Buttons({
+                style: {
+                    layout: 'vertical',
+                    color: 'blue',
+                    shape: 'rect',
+                    label: 'pay'
+                },
+                
+                createOrder: function(data, actions) {
+                    // Create order with cart details
+                    const items = cart.map(item => ({
+                        name: item.title,
+                        description: item.category === 'artwork' ? 
+                            `${item.size} - ${item.medium}` : 
+                            `Material: ${item.material}`,
+                        unit_amount: {
+                            currency_code: 'AUD',
+                            value: item.price.toFixed(2)
+                        },
+                        quantity: '1'
+                    }));
+                    
+                    return actions.order.create({
+                        purchase_units: [{
+                            description: 'Peacock Blue Designs - Art & Jewellery',
+                            amount: {
+                                currency_code: 'AUD',
+                                value: total.toFixed(2),
+                                breakdown: {
+                                    item_total: {
+                                        currency_code: 'AUD',
+                                        value: subtotal.toFixed(2)
+                                    },
+                                    shipping: {
+                                        currency_code: 'AUD',
+                                        value: shipping.toFixed(2)
+                                    }
+                                }
+                            },
+                            items: items
+                        }],
+                        application_context: {
+                            shipping_preference: 'GET_FROM_FILE'
+                        }
+                    });
+                },
+                
+                onApprove: function(data, actions) {
+                    return actions.order.capture().then(function(orderData) {
+                        // Successful payment
+                        console.log('Payment completed:', orderData);
+                        
+                        // Show success message
+                        alert('Thank you for your purchase! Order ID: ' + orderData.id + '\n\nYou will receive a confirmation email shortly.');
+                        
+                        // Clear cart
+                        cart = [];
+                        updateCart();
+                        toggleCart();
+                        
+                        // Optional: Send order details to your email (requires backend)
+                        sendOrderNotification(orderData);
+                    });
+                },
+                
+                onError: function(err) {
+                    console.error('PayPal Error:', err);
+                    alert('An error occurred with PayPal. Please try again or contact us directly.');
+                }
+            }).render('#paypal-button-container');
+        }
+
+        function sendOrderNotification(orderData) {
+            // This is a placeholder - in production, you'd send this to a backend service
+            console.log('Order notification would be sent:', {
+                orderId: orderData.id,
+                items: cart,
+                total: orderData.purchase_units[0].amount.value,
+                email: settings.paypalEmail
+            });
+        }
+
         function toggleCart() {
             document.getElementById('cartSidebar').classList.toggle('hidden');
             document.getElementById('cartOverlay').classList.toggle('hidden');
-        }
-
-        function checkout() {
-            alert('Redirecting to PayPal...');
         }
 
         function showAdminLogin() {
@@ -537,9 +654,10 @@ function loadData() {
         }
 
         function saveSettings() {
+            settings.paypalClientId = document.getElementById('paypalClientId').value;
             settings.paypalEmail = document.getElementById('paypalEmail').value;
             saveData();
-            alert('Settings saved!');
+            alert('Settings saved! Please reload the page for PayPal changes to take effect.');
         }
     </script>
 </body>
