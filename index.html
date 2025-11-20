@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Peacock Blue Designs - Jewellery & Art by Alby Greenwood</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- PayPal SDK -->
-    <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=AUD&enable-funding=card"></script>
     <style>
         .sold-overlay {
             position: absolute;
@@ -139,7 +137,7 @@
                 <div>
                     <label class="block text-gray-700 font-bold mb-2">PayPal Client ID</label>
                     <input type="text" id="paypalClientId" class="w-full p-2 border border-blue-300 rounded" placeholder="Your PayPal Client ID">
-                    <p class="text-xs text-gray-500 mt-1">Get this from PayPal Developer Dashboard</p>
+                    <p class="text-xs text-gray-500 mt-1">Get this from PayPal Developer Dashboard (Sandbox or Live)</p>
                 </div>
                 <div>
                     <label class="block text-gray-700 font-bold mb-2">PayPal Email (for notifications)</label>
@@ -188,7 +186,7 @@
                 <div id="paypal-button-container" class="mt-6"></div>
                 
                 <!-- Alternative: PayPal.Me Link (fallback) -->
-                <div id="paypalMeFallback" class="hidden mt-4">
+                <div id="paypalMeFallback" class="mt-4">
                     <a href="https://paypal.me/peacockbluedesigns" target="_blank" class="block w-full text-center bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700">
                         Pay with PayPal.Me
                     </a>
@@ -245,6 +243,7 @@
         let isAdmin = false;
         let currentCategory = 'all';
         let editingItemId = null;
+        let paypalSDKLoaded = false;
         let settings = {
             paypalClientId: "",
             paypalEmail: "peacockbluedesigns@outlook.com",
@@ -257,6 +256,7 @@
         window.addEventListener('load', async function() {
             await loadProductsFromGitHub();
             loadData();
+            await loadPayPalSDK();
             renderItems();
             showPage('home');
         });
@@ -287,6 +287,28 @@
             } catch(e) {
                 console.log('Could not load saved data');
             }
+        }
+
+        async function loadPayPalSDK() {
+            if (!settings.paypalClientId || settings.paypalClientId === '') {
+                console.log('No PayPal Client ID configured - showing PayPal.Me fallback');
+                return;
+            }
+
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = `https://www.paypal.com/sdk/js?client-id=${settings.paypalClientId}&currency=AUD&enable-funding=card`;
+                script.onload = () => {
+                    paypalSDKLoaded = true;
+                    console.log('PayPal SDK loaded successfully');
+                    resolve();
+                };
+                script.onerror = () => {
+                    console.error('Failed to load PayPal SDK');
+                    reject();
+                };
+                document.head.appendChild(script);
+            });
         }
 
         function showPage(page) {
@@ -420,11 +442,12 @@
             const fallback = document.getElementById('paypalMeFallback');
             container.innerHTML = '';
             
-            // Check if PayPal Client ID is configured
-            if (!settings.paypalClientId || settings.paypalClientId === '') {
+            // Check if PayPal SDK is loaded
+            if (!paypalSDKLoaded || typeof paypal === 'undefined') {
                 // Show PayPal.Me fallback
                 container.classList.add('hidden');
                 fallback.classList.remove('hidden');
+                console.log('Using PayPal.Me fallback');
                 return;
             }
             
@@ -653,11 +676,21 @@
             renderItems();
         }
 
-        function saveSettings() {
+        async function saveSettings() {
+            const oldClientId = settings.paypalClientId;
             settings.paypalClientId = document.getElementById('paypalClientId').value;
             settings.paypalEmail = document.getElementById('paypalEmail').value;
             saveData();
-            alert('Settings saved! Please reload the page for PayPal changes to take effect.');
+            
+            // If Client ID changed, reload PayPal SDK
+            if (oldClientId !== settings.paypalClientId) {
+                alert('Settings saved! Reloading PayPal SDK...');
+                paypalSDKLoaded = false;
+                await loadPayPalSDK();
+                alert('PayPal SDK loaded! You can now use checkout.');
+            } else {
+                alert('Settings saved!');
+            }
         }
     </script>
 </body>
